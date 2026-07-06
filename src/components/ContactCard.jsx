@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import {
   FaFacebookF,
@@ -8,8 +9,102 @@ import {
   FaWhatsapp,
   FaLinkedin,
 } from "react-icons/fa";
+import { useState } from "react";
 
 export default function ContactCard() {
+
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    notes: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Phone validation
+    const phoneRegex = /^[6-9]\d{9}$/;
+
+    if (!phoneRegex.test(formData.phone)) {
+      alert("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    // URL validation
+    const urlRegex = /(https?:\/\/|www\.|<|>)/i;
+
+    if (urlRegex.test(formData.address)) {
+      alert("Address should not contain URLs or HTML.");
+      return;
+    }
+
+    if (urlRegex.test(formData.notes)) {
+      alert("Notes should not contain URLs or HTML.");
+      return;
+    }
+
+    // Address validation
+    const addressRegex = /^[A-Za-z0-9\s,.-]{3,100}$/;
+
+    if (!addressRegex.test(formData.address)) {
+      alert(
+        "Address can contain only letters, numbers, spaces, commas, periods and hyphens."
+      );
+      return;
+    }
+
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        "https://apibackend.mastercall.in/api/v1/web-leads/submit/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            form_key: "frm_spa_planet_gaziabad_640035",
+            name: formData.name,
+            phone: formData.phone,
+            address: formData.address,
+            notes: formData.notes,
+            submitted_from_url: window.location.href,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Thank you! Your enquiry has been submitted.");
+
+        setFormData({
+          name: "",
+          phone: "",
+          address: "",
+          notes: "",
+        });
+      } else {
+        alert(data.message || "Submission failed.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong.");
+    }
+
+    setLoading(false);
+  };
+
   return (
     <section className="py-10 md:py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -129,54 +224,87 @@ export default function ContactCard() {
             />
 
             <h2 className="text-3xl md:text-4xl text-gray-600 font-serif mb-6">
-              Ask a Question
+              Booking
             </h2>
 
-            <form className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
 
               <input
                 type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
                 placeholder="Your Name"
                 className="w-full border rounded-full text-gray-600 px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[#A67D7A]"
+                required
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
 
                 <input
                   type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+
+                    setFormData({
+                      ...formData,
+                      phone: value,
+                    });
+                  }}
                   placeholder="Phone"
+                  maxLength={10}
+                  inputMode="numeric"
                   className="w-full border rounded-full text-gray-600 px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[#A67D7A]"
+                  required
                 />
 
                 <input
-                  type="email"
-                  placeholder="Email"
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    // Prevent URLs and angle brackets
+                    if (/(https?:\/\/|www\.|<|>)/i.test(value)) return;
+
+                    setFormData({
+                      ...formData,
+                      address: value,
+                    });
+                  }}
+                  placeholder="Your Area, City"
                   className="w-full border rounded-full text-gray-600 px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[#A67D7A]"
                 />
-
               </div>
 
               <input
                 type="text"
-                placeholder="Subject"
+                name="notes"
+                value={formData.notes}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  if (/(https?:\/\/|www\.|<|>)/i.test(value)) return;
+
+                  setFormData({
+                    ...formData,
+                    notes: value,
+                  });
+                }}
+                placeholder="Notes"
                 className="w-full border rounded-full text-gray-600 px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[#A67D7A]"
               />
 
-              <textarea
-                rows={5}
-                placeholder="Message"
-                className="w-full border rounded-2xl text-gray-600 px-5 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-[#A67D7A]"
-              />
-
-              <a
-                href="https://wa.me/919152885986?text=Hello%20I%20want%20to%20book%20an%20appointment."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 transition text-white py-3 rounded-full font-medium"
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#A67D7A] hover:bg-[#8f6865] text-white py-3 rounded-full font-medium transition duration-300 disabled:opacity-60"
               >
-                <FaWhatsapp />
-                Send on WhatsApp
-              </a>
+                {loading ? "Submitting..." : "Submit"}
+              </button>
 
             </form>
 

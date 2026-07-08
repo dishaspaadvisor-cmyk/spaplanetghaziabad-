@@ -1,4 +1,4 @@
-const BASE_URL = "https://yourdomain.com";
+const BASE_URL = "https://spaplanetghaziyabad.co.in/";
 
 export default function robots() {
   return {
